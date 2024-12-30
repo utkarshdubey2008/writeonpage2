@@ -39,7 +39,8 @@ def create_image(page_size, pen_color, text, font_path):
             for word in words:
                 # Check if the word fits in the line
                 test_line = f"{line_text} {word}".strip()
-                if draw.textsize(test_line, font=font)[0] <= max_width:
+                test_width, _ = font.getsize(test_line)  # Get the size of the test line
+                if test_width <= max_width:
                     line_text = test_line
                 else:
                     # Write the current line and start a new one
@@ -71,7 +72,7 @@ def create_image_api(page_size: str, pen_color: str, text: str):
             raise HTTPException(status_code=400, detail="Invalid pen color. Choose from black, red, blue, or green.")
 
         # Font path (ensure the font is uploaded to the fonts directory)
-        font_path = "fonts/CedarvilleCursive-Regular.ttf"
+        font_path = "font/CedarvilleCursive-Regular.ttf"
 
         # Create the image
         image = create_image(PAGE_SIZES[page_size], PEN_COLORS[pen_color], decoded_text, font_path)
