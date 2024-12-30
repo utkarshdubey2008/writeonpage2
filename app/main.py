@@ -45,7 +45,7 @@ def create_image_api(page_size: str, pen_color: str, text: str):
             raise HTTPException(status_code=400, detail="Invalid pen color. Choose from black, red, blue, or green.")
 
         # Create the image
-        font_path = "fonts/Cedavillie_Cursive.ttf"  # Path to your font
+        font_path = "fonts/CedarvilleCursive-Regular.ttf"  # Path to your font
         image = create_image(PAGE_SIZES[page_size], PEN_COLORS[pen_color], text, font_path)
 
         # Return the image as a response
