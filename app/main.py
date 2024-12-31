@@ -40,7 +40,7 @@ def create_image(page_size, pen_color, text, font_path):
         for word in words:
             # Check if adding the next word exceeds the maximum width
             test_line = f"{line} {word}".strip()
-            text_width, text_height = draw.textsize(test_line, font=font)
+            text_width, _ = font.getsize(test_line)  # Use getsize to measure text width
             if text_width <= max_width:
                 line = test_line
             else:
@@ -50,7 +50,7 @@ def create_image(page_size, pen_color, text, font_path):
                 line = word
 
             # Check if we've reached the bottom of the page
-            if y_position + text_height > height:
+            if y_position + line_spacing > height:
                 break
 
         # Draw any remaining text
