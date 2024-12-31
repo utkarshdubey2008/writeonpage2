@@ -39,7 +39,9 @@ def create_image(page_size, pen_color, text, font_path):
         # Handle heading (first line)
         heading = lines[0].strip()
         heading_uppercase = heading.upper()  # Convert heading to uppercase
-        heading_width, heading_height = heading_font.getsize(heading_uppercase)
+        heading_bbox = heading_font.getbbox(heading_uppercase)
+        heading_width = heading_bbox[2] - heading_bbox[0]
+        heading_height = heading_bbox[3] - heading_bbox[1]
         heading_x = (width - heading_width) // 2  # Center align the heading
         heading_y = 50  # Position at the top
         draw.text((heading_x, heading_y), heading_uppercase, fill=pen_color, font=heading_font)
