@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
+from urllib.parse import unquote
 from PIL import Image, ImageDraw, ImageFont
 import io
 
@@ -67,6 +68,9 @@ def create_image(page_size, pen_color, text, font_path):
 @app.get("/create/{page_size}/{pen_color}/prompt={text}")
 def create_image_api(page_size: str, pen_color: str, text: str):
     try:
+        # Decode URL-encoded text
+        decoded_text = unquote(text)
+
         # Validate inputs
         if page_size not in PAGE_SIZES:
             raise HTTPException(status_code=400, detail="Invalid page size. Choose from A4, A5, or Letter.")
@@ -75,7 +79,7 @@ def create_image_api(page_size: str, pen_color: str, text: str):
 
         # Create the image
         font_path = "fonts/CedarvilleCursive-Regular.ttf"  # Path to your font
-        image = create_image(PAGE_SIZES[page_size], PEN_COLORS[pen_color], text, font_path)
+        image = create_image(PAGE_SIZES[page_size], PEN_COLORS[pen_color], decoded_text, font_path)
 
         # Return the image as a response
         byte_io = io.BytesIO()
