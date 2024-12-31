@@ -15,6 +15,12 @@ PEN_COLORS = {
     "green": (34, 139, 34)
 }
 
+# Available Fonts
+FONTS = {
+    "cursive": "fonts/CedarvilleCursive-Regular.ttf",
+    "normal": "fonts/Sansita-Regular.ttf"
+}
+
 # Function to create an image with the given parameters
 def create_image(page_size, pen_color, text, font_path):
     try:
@@ -65,8 +71,8 @@ def create_image(page_size, pen_color, text, font_path):
 
 
 # API Endpoint
-@app.get("/create/{page_size}/{pen_color}/prompt={text}")
-def create_image_api(page_size: str, pen_color: str, text: str):
+@app.get("/create/{page_size}/{pen_color}/{font_style}/prompt={text}")
+def create_image_api(page_size: str, pen_color: str, font_style: str, text: str):
     try:
         # Decode URL-encoded text
         decoded_text = unquote(text)
@@ -76,9 +82,13 @@ def create_image_api(page_size: str, pen_color: str, text: str):
             raise HTTPException(status_code=400, detail="Invalid page size. Choose from A4, A5, or Letter.")
         if pen_color not in PEN_COLORS:
             raise HTTPException(status_code=400, detail="Invalid pen color. Choose from black, red, blue, or green.")
+        if font_style not in FONTS:
+            raise HTTPException(status_code=400, detail="Invalid font style. Choose from cursive or normal.")
+
+        # Get the font path based on font style
+        font_path = FONTS[font_style]
 
         # Create the image
-        font_path = "fonts/CedarvilleCursive-Regular.ttf"  # Path to your font
         image = create_image(PAGE_SIZES[page_size], PEN_COLORS[pen_color], decoded_text, font_path)
 
         # Return the image as a response
