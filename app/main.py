@@ -22,32 +22,45 @@ def create_image(page_size, pen_color, text, font_path):
         image = Image.new("RGB", (width, height), "white")
         draw = ImageDraw.Draw(image)
 
-        # Load the font locally
-        font = ImageFont.truetype(font_path, 50)  # Set default font size to 50 for high-quality text
+        # Load the fonts
+        regular_font = ImageFont.truetype(font_path, 50)  # Regular font for body text
+        heading_font = ImageFont.truetype(font_path, 80)  # Larger and bold font for heading
 
         # Draw ruled lines
         line_spacing = 80  # Adjust spacing between ruled lines
         for y in range(line_spacing, height, line_spacing):
             draw.line((0, y, width, y), fill=(200, 200, 200), width=2)
 
-        # Handle word wrapping and alignment
+        # Split text into lines
+        lines = text.split("\n")
+        if not lines:
+            raise HTTPException(status_code=400, detail="Text cannot be empty.")
+
+        # Handle heading (first line)
+        heading = lines[0].strip()
+        heading_uppercase = heading.upper()  # Convert heading to uppercase
+        heading_width, heading_height = heading_font.getsize(heading_uppercase)
+        heading_x = (width - heading_width) // 2  # Center align the heading
+        heading_y = 50  # Position at the top
+        draw.text((heading_x, heading_y), heading_uppercase, fill=pen_color, font=heading_font)
+
+        # Handle body text (remaining lines)
+        body_text = "\n".join(lines[1:]).strip()
         margin = 100  # Left margin for text
         max_width = width - 2 * margin  # Maximum width for text
-        y_position = 100  # Start writing below the top margin
+        y_position = heading_y + heading_height + 50  # Start body text below the heading
 
-        # Split text into words
-        words = text.split(" ")
+        # Split body text into words for word wrapping
+        words = body_text.split(" ")
         line = ""
         for word in words:
-            # Check if adding the next word exceeds the maximum width
             test_line = f"{line} {word}".strip()
-            text_bbox = font.getbbox(test_line)  # Get the bounding box of the text
-            text_width = text_bbox[2] - text_bbox[0]  # Calculate text width
+            text_bbox = regular_font.getbbox(test_line)
+            text_width = text_bbox[2] - text_bbox[0]
             if text_width <= max_width:
                 line = test_line
             else:
-                # Draw the current line and start a new one
-                draw.text((margin, y_position), line, fill=pen_color, font=font)
+                draw.text((margin, y_position), line, fill=pen_color, font=regular_font)
                 y_position += line_spacing
                 line = word
 
@@ -57,7 +70,7 @@ def create_image(page_size, pen_color, text, font_path):
 
         # Draw any remaining text
         if line:
-            draw.text((margin, y_position), line, fill=pen_color, font=font)
+            draw.text((margin, y_position), line, fill=pen_color, font=regular_font)
 
         return image
     except Exception as e:
