@@ -18,7 +18,7 @@ PEN_COLORS = {
 # Available Fonts
 FONTS = {
     "cursive": "fonts/CedarvilleCursive-Regular.ttf",
-    "normal": "fonts/Sansita-Regular.ttf"
+    "normal": "fonts/Kalam-Regular.ttf"
 }
 
 # Function to create an image with the given parameters
