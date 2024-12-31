@@ -24,12 +24,10 @@ def create_image(page_size, pen_color, text, font_path):
 
         # Load the fonts
         regular_font = ImageFont.truetype(font_path, 50)  # Regular font for body text
-        heading_font = ImageFont.truetype(font_path, 80)  # Larger and bold font for heading
+        heading_font = ImageFont.truetype(font_path, 80)  # Larger font for heading
 
-        # Draw ruled lines
+        # Draw ruled lines (optional, if you want lines)
         line_spacing = 80  # Adjust spacing between ruled lines
-        for y in range(line_spacing, height, line_spacing):
-            draw.line((0, y, width, y), fill=(200, 200, 200), width=2)
 
         # Split text into lines
         lines = text.split("\n")
