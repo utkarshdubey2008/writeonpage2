@@ -40,7 +40,8 @@ def create_image(page_size, pen_color, text, font_path):
         for word in words:
             # Check if adding the next word exceeds the maximum width
             test_line = f"{line} {word}".strip()
-            text_width, _ = font.getsize(test_line)  # Use getsize to measure text width
+            text_bbox = font.getbbox(test_line)  # Get the bounding box of the text
+            text_width = text_bbox[2] - text_bbox[0]  # Calculate text width
             if text_width <= max_width:
                 line = test_line
             else:
