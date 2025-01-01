@@ -12,6 +12,25 @@ PEN_COLORS = {"black": (0, 0, 0), "red": (220, 20, 60), "blue": (25, 25, 112), "
 
 FONTS = {"cursive": "fonts/CedarvilleCursive-Regular.ttf", "normal": "fonts/Kalam-Regular.ttf"}
 
+def wrap_text(text, font, max_width):
+    """
+    Wrap text so that it fits within the specified width.
+    """
+    lines = []
+    current_line = []
+    width, _ = font.getsize(text)
+    for word in text.split():
+        # Check the width of the current line with the next word
+        test_line = ' '.join(current_line + [word])
+        if font.getsize(test_line)[0] <= max_width:
+            current_line.append(word)
+        else:
+            # Start a new line
+            lines.append(' '.join(current_line))
+            current_line = [word]
+    lines.append(' '.join(current_line))  # Add the last line
+    return lines
+
 def create_image(page_size, text, font_path):
     try:
         width, height = page_size
@@ -36,16 +55,18 @@ def create_image(page_size, text, font_path):
             question_answer = segment.split("</q>")[0]
             answer = segment.split("</q>")[1].split("<a>")[1].split("</a>")[0] if "<a>" in segment else ""
 
-            # Write the question with numbering
-            question_text = f"{question_number}. {question_answer.strip()}"
-            draw.text((margin, y_position), question_text, fill=PEN_COLORS["black"], font=font)
-            y_position += line_spacing
+            # Wrap and draw the question with numbering
+            question_lines = wrap_text(f"{question_number}. {question_answer.strip()}", font, width - 2 * margin)
+            for line in question_lines:
+                draw.text((margin, y_position), line, fill=PEN_COLORS["black"], font=font)
+                y_position += line_spacing
 
             # Write "Ans-" prefix and the answer
             if answer:
-                answer_text = f"Ans- {answer.strip()}"
-                draw.text((margin, y_position), answer_text, fill=PEN_COLORS["blue"], font=font)
-                y_position += line_spacing
+                answer_lines = wrap_text(f"Ans- {answer.strip()}", font, width - 2 * margin)
+                for line in answer_lines:
+                    draw.text((margin, y_position), line, fill=PEN_COLORS["blue"], font=font)
+                    y_position += line_spacing
 
             question_number += 1
 
