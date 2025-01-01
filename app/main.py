@@ -18,11 +18,12 @@ def wrap_text(text, font, max_width):
     """
     lines = []
     current_line = []
-    width, _ = font.getsize(text)
+    
     for word in text.split():
         # Check the width of the current line with the next word
         test_line = ' '.join(current_line + [word])
-        if font.getsize(test_line)[0] <= max_width:
+        text_width, _ = font.getsize(test_line)  # Use getsize() to get the width of the text
+        if text_width <= max_width:
             current_line.append(word)
         else:
             # Start a new line
