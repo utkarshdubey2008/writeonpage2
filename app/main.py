@@ -55,9 +55,12 @@ def create_image(page_size, text, font_path):
         question_number = 1
 
         for segment in segments[1:]:
-            # Extract question and answer, ensuring both parts exist
-            question_answer = segment.split("</q>")[0]
-            answer = segment.split("</q>")[1].split("<a>")[1].split("</a>")[0] if "<a>" in segment else ""
+            # Extract question and answer correctly
+            try:
+                question_answer = segment.split("</q>")[0]
+                answer = segment.split("<a>")[1].split("</a>")[0] if "<a>" in segment else ""
+            except IndexError:
+                continue  # Skip segments that don't have proper question/answer format
 
             # Wrap and draw the question with numbering
             question_lines = wrap_text(f"{question_number}. {question_answer.strip()}", font, width - 2 * margin)
