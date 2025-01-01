@@ -68,7 +68,7 @@ def create_image(page_size, text, font_path):
                 draw.text((margin, y_position), line, fill=PEN_COLORS["black"], font=font)
                 y_position += line_spacing
 
-            # Write "Ans-" prefix and the answer
+            # Write only "Ans-" once before the answer and then the answer
             if answer:
                 answer_lines = wrap_text(f"Ans- {answer.strip()}", font, width - 2 * margin)
                 for line in answer_lines:
