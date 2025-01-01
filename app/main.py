@@ -22,7 +22,10 @@ def wrap_text(text, font, max_width):
     for word in text.split():
         # Check the width of the current line with the next word
         test_line = ' '.join(current_line + [word])
-        text_width, _ = font.getsize(test_line)  # Use getsize() to get the width of the text
+        # Get the bounding box of the text to calculate width
+        bbox = font.getbbox(test_line)
+        text_width = bbox[2] - bbox[0]  # bbox[2] is right, bbox[0] is left
+
         if text_width <= max_width:
             current_line.append(word)
         else:
