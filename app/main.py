@@ -8,97 +8,105 @@ app = FastAPI()
 
 # Predefined Page Sizes and Colors
 PAGE_SIZES = {"A4": (1240, 1754), "A5": (874, 1240), "Letter": (1275, 1650)}
-PEN_COLORS = {"black": (0, 0, 0), "red": (220, 20, 60), "blue": (25, 25, 112), "green": (34, 139, 34)}
+PEN_COLORS = {
+    "black": (0, 0, 0),
+    "red": (220, 20, 60),
+    "blue": (25, 25, 112),
+    "green": (34, 139, 34)
+}
 
-FONTS = {"cursive": "fonts/CedarvilleCursive-Regular.ttf", "normal": "fonts/Kalam-Regular.ttf"}
+# Available Fonts
+FONTS = {
+    "cursive": "fonts/CedarvilleCursive-Regular.ttf",
+    "normal": "fonts/Kalam-Regular.ttf",
+    "sansita": "fonts/Sansita-Regular.ttf"
+}
 
-def wrap_text(text, font, max_width):
-    """
-    Wrap text so that it fits within the specified width.
-    """
-    lines = []
-    current_line = []
-    
-    for word in text.split():
-        # Check the width of the current line with the next word
-        test_line = ' '.join(current_line + [word])
-        # Get the bounding box of the text to calculate width
-        bbox = font.getbbox(test_line)
-        text_width = bbox[2] - bbox[0]  # bbox[2] is right, bbox[0] is left
+# Function to create a ruled page background
+def create_ruled_page(width, height, line_spacing=70):
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
 
-        if text_width <= max_width:
-            current_line.append(word)
-        else:
-            # Start a new line
-            lines.append(' '.join(current_line))
-            current_line = [word]
-    lines.append(' '.join(current_line))  # Add the last line
-    return lines
+    # Draw horizontal lines
+    for y in range(100, height, line_spacing):
+        draw.line([(50, y), (width - 50, y)], fill=(200, 200, 200), width=2)
 
-def create_image(page_size, text, font_path):
+    return image
+
+# Function to overlay question-answer text on the ruled page
+def create_question_answer_image(page_size, question_color, answer_color, qa_pairs, font_path):
     try:
         width, height = page_size
-        image = Image.new("RGB", (width, height), "white")
+        # Create a ruled page
+        image = create_ruled_page(width, height)
         draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype(font_path, 50)
+        font = ImageFont.truetype(font_path, 50)  # Default font size is 50
 
-        # Draw ruled lines
-        line_spacing = 80
-        for y in range(line_spacing, height, line_spacing):
-            draw.line((0, y, width, y), fill=(200, 200, 200), width=2)
-
-        # Decode URL-encoded input and split questions and answers
-        text = unquote(text)  # Decode URL-encoded input
-        segments = text.split("<q>")
-        y_position = 100
+        # Line Spacing and Margins
+        line_spacing = 70
         margin = 100
-        question_number = 1
+        max_width = width - 2 * margin
+        y_position = 100
 
-        for segment in segments[1:]:
-            # Extract question and answer correctly
-            try:
-                question_answer = segment.split("</q>")[0]
-                answer = segment.split("<a>")[1].split("</a>")[0] if "<a>" in segment else ""
-            except IndexError:
-                continue  # Skip segments that don't have proper question/answer format
+        for idx, (question, answer) in enumerate(qa_pairs, start=1):
+            # Write the question
+            question_text = f"{idx}. {question}"
+            draw.text((margin, y_position), question_text, fill=question_color, font=font)
+            y_position += line_spacing
 
-            # Wrap and draw the question with numbering
-            question_lines = wrap_text(f"{question_number}. {question_answer.strip()}", font, width - 2 * margin)
-            for line in question_lines:
-                draw.text((margin, y_position), line, fill=PEN_COLORS["black"], font=font)
-                y_position += line_spacing
-
-            # Write only "Ans-" once before the answer and then the answer
-            if answer:
-                answer_lines = wrap_text(f"Ans- {answer.strip()}", font, width - 2 * margin)
-                for line in answer_lines:
-                    draw.text((margin, y_position), line, fill=PEN_COLORS["blue"], font=font)
-                    y_position += line_spacing
-
-            question_number += 1
-
-            # Stop if out of page space and continue on new page if necessary
+            # Check if we've reached the bottom of the page
             if y_position + line_spacing > height:
-                y_position = 100  # Reset to top of the next page
-                image.paste(create_image(page_size, text, font_path), (0, y_position))
-                break
+                raise HTTPException(status_code=400, detail="Text exceeds page size")
+
+            # Write the answer
+            answer_text = f"Ans:- {answer}"
+            draw.text((margin, y_position), answer_text, fill=answer_color, font=font)
+            y_position += line_spacing
+
+            # Check if we've reached the bottom of the page again
+            if y_position + line_spacing > height:
+                raise HTTPException(status_code=400, detail="Text exceeds page size")
 
         return image
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.get("/create/{page_size}/{font_style}/prompt={text}")
-def create_image_api(page_size: str, font_style: str, text: str):
+# API Endpoint for Question-Answer Mode
+@app.get("/create/{page_size}/{font_style}/{qa_path:path}")
+def create_question_answer_api(page_size: str, font_style: str, qa_path: str):
     try:
+        # Decode URL-encoded text
+        decoded_path = unquote(qa_path)
+        qa_segments = decoded_path.split("/")
+        qa_pairs = []
+
+        # Parse question-answer pairs
+        for i in range(0, len(qa_segments), 4):
+            if i + 3 >= len(qa_segments) or not qa_segments[i].startswith("q") or not qa_segments[i + 2].startswith("a"):
+                raise HTTPException(status_code=400, detail="Invalid question-answer format.")
+            question = qa_segments[i + 1]
+            answer = qa_segments[i + 3]
+            qa_pairs.append((question, answer))
+
+        # Validate inputs
         if page_size not in PAGE_SIZES:
             raise HTTPException(status_code=400, detail="Invalid page size. Choose from A4, A5, or Letter.")
         if font_style not in FONTS:
-            raise HTTPException(status_code=400, detail="Invalid font style. Choose from cursive or normal.")
+            raise HTTPException(status_code=400, detail="Invalid font style. Choose from cursive, normal, or sansita.")
 
+        # Get the font path based on font style
         font_path = FONTS[font_style]
-        image = create_image(PAGE_SIZES[page_size], text, font_path)
 
+        # Create the image
+        image = create_question_answer_image(
+            PAGE_SIZES[page_size],
+            PEN_COLORS["black"],  # Questions are in black
+            PEN_COLORS["blue"],   # Answers are in blue
+            qa_pairs,
+            font_path
+        )
+
+        # Return the image as a response
         byte_io = io.BytesIO()
         image.save(byte_io, "PNG", quality=95)
         byte_io.seek(0)
